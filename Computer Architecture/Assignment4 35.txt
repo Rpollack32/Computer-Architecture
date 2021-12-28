@@ -1,0 +1,226 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <math.h>
+
+#define VALUES 2
+#define MAXROWSIZE 9
+
+int main(int argc, char* argv[])
+{  
+
+   FILE *file = fopen(argv[1], "r");
+
+   if(file == NULL) 
+   {
+      return -1;
+   }
+
+   char *token;
+   char *directive[100];
+   char str[100];
+   char *actions[10];
+   int num_of_invars;
+   int num_of_outvars;
+   char *action;
+   int counter=0;
+
+ while(!feof(file)) 
+ {
+     // Read the file line by line
+     fgets(str,100,file);
+     actions[counter] = str;
+     counter = counter + 1;
+     int i=0;
+     token = strtok(str, " ");
+     while(token != NULL) 
+     {
+       //act_array[counter][i]= token;
+       directive[i] = token;
+       i++;
+       token = strtok(NULL, " ");
+     }
+
+     // Get the INPUTVAR information 
+     int input = strcmp(directive[0],"INPUTVAR");
+     if(input==0) {
+        if(isdigit(*directive[1]))
+        {
+         num_of_invars = atoi(directive[1]);
+        }
+     }
+    
+     // Get the OUTPUTVAR information 
+     int output = strcmp(directive[0],"OUTPUTVAR");
+     if(output==0) {
+        if(isdigit(*directive[1]))
+        {
+         num_of_outvars = atoi(directive[1]);
+        }
+     }
+  }
+  fclose(file);
+
+
+  // Determine how many rows that need to created 
+  int rows;
+  int w;
+  rows = VALUES;
+  for(w=1; w<num_of_invars; w++)
+  {
+    rows = rows * VALUES;
+  }
+ 
+  int inputs = num_of_invars;
+    
+  //Create a multi-dimensional array to hold all values
+  int row = rows;
+  int multi[row][MAXROWSIZE];
+  int val; 
+  int y;
+
+  for(y=1; y<row; y++)
+  {
+    int i=MAXROWSIZE;
+    int n=y; // integer to convert to binary
+    // try to set the values at the end of the array
+    for(i=i-1;i>=0;i--)    
+    {    
+      multi[y][i]=n%2;    
+      n=n/2;    
+    }
+  }
+
+  int z;
+  for(z=0; z<row; z++)
+  {
+    int c=MAXROWSIZE-inputs;
+    int b;
+    int condition=0;
+    int success = 0;
+    int previous=0;
+    int results[num_of_outvars];
+    int result=0;
+    int outs;
+    int index = 2;
+    char *and = "AND";
+    char *or = "OR";
+
+    //Print out the initial inputs
+    int h;
+    for(h=c; h<MAXROWSIZE;h++)
+    {
+      printf("%d ",multi[z][h]);
+    }
+
+
+    for(outs=0; outs<num_of_outvars; outs++)
+    {
+
+
+//    if(counter > 2) 
+//    {
+       for(b=c;b<MAXROWSIZE;b++)       
+       {
+         int loop = b;
+         val = multi[z][b];    
+
+         // AND Operation
+         if ( strcmp(actions[index], and) == 0 ) {
+           if (previous == val)
+           {
+             result = val;
+           } 
+         }
+
+        //NOT Operation
+        if ( strcmp(actions[index], "NOT") == 0)
+        {
+          if ( val == 0 ) 
+          {
+            result = 1;
+          }
+          else
+          {
+            result = 0;
+          }
+        }
+
+        //NOR Operation
+        if ( strcmp(actions[index], "NOR") == 0)
+        {
+          if ( loop > c )
+          {
+            if ( previous == val )
+            {
+              if (previous == 1)
+              { 
+                result = 0;
+              }
+              else 
+              {
+                result = 1;
+              }
+            }
+            else
+            {
+              result = 0;
+            }
+          }
+        }
+
+        // XOR Operation
+        if (strcmp(actions[index], "XOR") == 0)
+        {
+          if ( loop > c )
+          {
+            if ( previous == val )
+            {
+              result = 0;
+            }
+            else
+            {
+              result = 1;
+            }
+          }
+        }
+
+        // OR Operation
+        if ( strcmp(actions[index], or) == 0 )
+        {
+          if ( loop > c )
+          {
+            if (previous == 1 || val == 1) 
+            {
+              result = 1;
+            }
+          }
+        }
+
+        // NAND Operation
+        if ( strcmp(actions[index], "NAND") == 0 )
+        {
+          if ( loop > c )
+          {
+            if ( val == previous && val == 1)
+            {
+              result = 0;
+            }
+            else
+            {
+              result = 1;
+            }
+          }
+        } 
+         previous = val;  
+       }
+       printf("%d ", result);
+       index = index + 1;
+    }
+
+    printf("\n");
+  } 
+// }
+// fclose(file);
+}

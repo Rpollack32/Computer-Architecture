@@ -1,0 +1,109 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <math.h>
+
+#define VALUES 2
+#define MAXROWSIZE 9
+
+int main(int argc, char* argv[])
+{
+
+  int processResults(double rows, int inputs, int outputs)
+  {
+    //printf("INPUTS: %d\n", inputs);
+   
+    //Create a multi-dimensional array to hold all values
+    int row = (int) rows;
+    int multi[row][MAXROWSIZE];
+ 
+    // Need to start process at 1. Prepopulate index for 0
+    int a[MAXROWSIZE];
+    int i=MAXROWSIZE; // starting position in array to populate values
+
+     //printf("rows in process results: %.0lf\n", rows);
+     int y;
+     for(y=1; y<rows; y++)
+     {
+       // try to set the values at the end of the array
+       int i=MAXROWSIZE;
+       int n=y; // integer to convert to binary
+       // try to set the values at the end of the array
+       for(i=i-1;i>=0;i--)    
+       {    
+         multi[y][i]=n%2;    
+         n=n/2;    
+       }
+     }
+
+     int z;
+     for(z=0; z<rows; z++)
+     {
+        int b;
+       printf("\n");
+       for(b=MAXROWSIZE-inputs;b<MAXROWSIZE;b++)    
+       {    
+         printf("%d ",multi[z][b]);  
+       } 
+     } 
+  return 1;
+}
+
+
+   //FILE *file = fopen(argv[1], "r");
+   FILE *file = fopen("test3.txt", "r");
+
+   if(file == NULL) 
+   {
+      return -1;
+   }
+
+   char *token;
+   char *directive[100];
+   char str[100];
+
+   int num_of_invars;
+   int num_of_outvars;
+
+   while(!feof(file)) 
+   {
+     // Read the file line by line
+     fgets(str,100,file);
+     printf("%s", str);
+     int i=0;
+     token = strtok(str, " ");
+     while(token != NULL) 
+     {
+       directive[i] = token;
+       i++;
+       token = strtok(NULL, " ");
+     }
+
+     // Get the INPUTVAR information 
+     int input = strcmp(directive[0],"INPUTVAR");
+     if(input==0) {
+        if(isdigit(*directive[1]))
+        {
+         num_of_invars = atoi(directive[1]);
+        }
+     }
+    
+     // Get the OUTPUTVAR information 
+     int output = strcmp(directive[0],"OUTPUTVAR");
+     if(output==0) {
+        if(isdigit(*directive[1]))
+        {
+         num_of_outvars = atoi(directive[1]);
+        }
+     }
+   }
+   fclose(file);
+
+   // The # of results rows is based on the values (0,1) to the power of the input variables
+   double values=2;
+   double rows = pow(values, num_of_invars);
+
+   processResults(rows, num_of_invars, num_of_outvars);
+
+}

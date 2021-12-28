@@ -1,0 +1,228 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+
+#define TRUE 0
+#define VAL1 0
+#define VAL2 1
+
+int indxLoc(int size, char **array, char *var) 
+{
+    int i;
+    int result = -1;
+    for (i = 0; i < size; i++) 
+    {
+        if (strcmp(array[i], var) == 0) 
+        {
+            result = i;
+            return result;
+        }
+    }
+    return result;
+}
+
+int checkInputs(int *array, int input_count) 
+{
+    int i;
+    int result = 0;
+    for (i = input_count + 1; i >= 2; i--) 
+    {
+        array[i] = !array[i];
+        if (array[i] == 1) 
+        {
+            result = 1;
+            return result;
+        }
+    }
+    return result;
+}
+
+struct test {
+    char operation[100];
+    int n;
+    int s;
+    int *inputs;
+    int *outputs;
+    int *selectors;
+};
+
+int main(int argc, char** argv) 
+{
+    char dir[100];
+    int str_count = 0;
+    int input_count = 0;
+    int output_count = 0;
+    int total_count = 0;
+    char *and = "AND";
+    char *nand = "NAND";
+    char *or = "OR";
+    char *xor = "XOR";
+    char *nor = "NOR";
+    char *not = "NOT";
+
+    FILE *file = fopen(argv[1], "r");
+    //FILE *file = fopen("test9.txt", "r");
+    fscanf(file, " %s", dir);
+    fscanf(file, "%d", &input_count);
+
+    struct test* actions = NULL;
+    int size = 2;
+    char **vals;
+    int *values = malloc(size * sizeof(int));
+    size += input_count;
+    vals = malloc(size * sizeof(char *));
+    vals[0] = malloc(2 * sizeof(char));
+    vals[0] = "0\0";
+    vals[1] = malloc(2 * sizeof(char));
+    vals[1] = "1\0";
+
+    int i;
+    for (i = 0; i < input_count; i++) 
+    {
+       vals[i + 2] = malloc(100 * sizeof(char));
+       fscanf(file, "%*[: ]%99s", vals[i + 2]);
+    }
+
+    fscanf(file, " %s", dir);
+    fscanf(file, "%d", &output_count);
+    size += output_count;
+    vals = realloc(vals, size * sizeof(char *));
+    for (i = 0; i < output_count; i++) 
+    {
+       vals[i + input_count + 2] = malloc(100 * sizeof(char));
+       fscanf(file, "%*[: ]%99s", vals[i + input_count + 2]);
+    }
+
+    while (!feof(file)) 
+    {
+        int numInputs = 2;
+        int numOutputs = 1;
+        struct test next;
+        int sc = fscanf(file, " %s", dir); 
+        if (sc != 1) 
+        {
+            break;
+        }
+        str_count++;
+        next.n = 0;
+        next.s = 0;
+        strcpy(next.operation, dir);
+        next.selectors = malloc(next.s * sizeof(int));
+        next.inputs = malloc(numInputs * sizeof(int));
+        next.outputs = malloc(numOutputs * sizeof(int));
+        char val[100];
+
+        if (strcmp(dir, not) == 0) {
+            numInputs = 1;
+        }
+
+        for (i = 0; i < numInputs; i++) 
+        {
+            fscanf(file, "%*[: ]%99s", val);
+            next.inputs[i] = indxLoc(size, vals, val);
+        }
+
+        for (i = 0; i < next.s; i++) 
+        {
+            fscanf(file, "%*[: ]%99s", val);
+            next.selectors[i] = indxLoc(size, vals, val);
+        }
+ 
+        for (i = 0; i < numOutputs; i++) 
+        {
+            fscanf(file, "%*[: ]%99s", val);
+            int idx = indxLoc(size, vals, val);
+            if (idx == -1) 
+            {
+                total_count++;
+                size++;
+                vals = realloc(vals, size * sizeof(char *));
+                vals[size - 1] = malloc(100 * sizeof(char));
+                strcpy(vals[size - 1], val);
+                next.outputs[i] = size - 1;
+            }
+            else 
+            {
+                next.outputs[i] = idx;
+            }
+        }
+        
+        if (!actions) 
+        {
+            actions = malloc(sizeof(struct test));
+        } else 
+        {
+            actions = realloc(actions, str_count * sizeof(struct test));
+        }
+        actions[str_count - 1] = next;
+    }
+
+    // Clear the array
+    values = malloc(size * sizeof(int));
+    int w;
+    for (w = 0; w < size; w++) 
+    {
+      values[w] = 0;
+    }
+    values[1] = 1;
+
+      int done=0;
+      while(!TRUE) 
+      {
+        for (i = 0; i < input_count; i++) 
+        {
+            printf("%d ", values[i + 2]);
+        }
+
+        for (i = 0; i < str_count; i++) 
+        {
+            struct test next = actions[i];
+
+            if (strcmp(next.operation, and)== TRUE) 
+            {
+                values[next.outputs[VAL1]] = values[next.inputs[VAL1]] && values[next.inputs[VAL2]];
+            }
+
+            if (strcmp(next.operation, nand) == TRUE) 
+            {
+                values[next.outputs[VAL1]] = !(values[next.inputs[VAL1]] && values[next.inputs[VAL2]]);
+            }
+
+            if (strcmp(next.operation, or) == TRUE) 
+            {
+                values[next.outputs[VAL1]] = values[next.inputs[VAL1]] || values[next.inputs[VAL2]];
+            }
+
+            if (strcmp(next.operation, xor) == TRUE) 
+            {
+                values[next.outputs[VAL1]] = values[next.inputs[VAL1]] ^ values[next.inputs[VAL2]];
+            }
+
+            if (strcmp(next.operation, nor) == TRUE) 
+            {
+                values[next.outputs[VAL1]] = !(values[next.inputs[VAL1]] || values[next.inputs[VAL2]]);
+            }
+
+            if (strcmp(next.operation, not) == TRUE) 
+            {
+                values[next.outputs[VAL1]] = !values[next.inputs[VAL1]];
+            }
+        }
+
+       // Print the full row with outputs
+        for (i = 0; i < output_count; i++) 
+        {
+            printf("%d ", values[input_count + i + 2]);
+        }
+        printf("\n");
+
+        // If more inputs do not exist stop
+        int check = 0;
+        check = checkInputs(values, input_count);
+        if (!check)
+        {
+           break;
+        }
+    }
+}
